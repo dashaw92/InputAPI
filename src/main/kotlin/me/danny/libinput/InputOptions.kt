@@ -12,7 +12,10 @@ data class InputOptions(val prompt: List<String>, val mode: InputMode) {
     constructor(prompt: List<String>) : this(prompt, InputMode.defaultMode())
 
     fun provide(player: Player, callback: OutputCallback) {
-        if(!mode.isAvailable()) InputMode.defaultMode().provide(player, prompt, callback)
+        val mode = if(!mode.isAvailable()) InputMode.defaultMode()
+        else mode
+
+        mode.provide(player, prompt, callback).getInput()
     }
 }
 

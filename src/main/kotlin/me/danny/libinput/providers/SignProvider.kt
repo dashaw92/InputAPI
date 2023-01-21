@@ -18,9 +18,6 @@ Inspired by the public resource on the spigot forums:
 https://www.spigotmc.org/threads/signmenu-1-16-5-get-player-sign-input.249381/
 
 Adapted to Kotlin and updated to 1.19 by Danny
-(
-    currently untested! I wanted to finish this class up before bed! I don't feel good :(
-)
  */
 class SignProvider(player: Player, prompt: List<String>, callback: OutputCallback) : InputProvider(player, prompt, callback) {
 
@@ -34,7 +31,7 @@ class SignProvider(player: Player, prompt: List<String>, callback: OutputCallbac
                     val menu = inEditor[player.uniqueId] ?: return
                     event.isCancelled = true
 
-                    val input = event.packet.strings.read(0)
+                    val input = event.packet.stringArrays.read(0)[0]
                     Bukkit.getScheduler().runTaskLater(InputAPI.instance(), Runnable {
                         player.sendBlockChange(menu.loc, menu.loc.block.blockData)
                     }, 1)
@@ -64,13 +61,24 @@ class SignProvider(player: Player, prompt: List<String>, callback: OutputCallbac
             else player.world.minHeight + 1
             val pos = BlockPosition(loc.blockX, oppositeY, loc.blockZ)
 
-            player.sendBlockChange(pos.toLocation(player.world), Material.DARK_OAK_SIGN.createBlockData())
-            player.sendSignChange(pos.toLocation(player.world), prompt.toTypedArray())
+            val lines = padLinesToFour(prompt)
+
+            player.sendBlockChange(pos.toLocation(player.world), Material.OAK_SIGN.createBlockData())
+            player.sendSignChange(pos.toLocation(player.world), lines)
 
             val openSign = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.OPEN_SIGN_EDITOR)
             openSign.blockPositionModifier.write(0, pos)
             ProtocolLibrary.getProtocolManager().sendServerPacket(player, openSign)
         }
 
+        private fun padLinesToFour(prompt: List<String>): Array<String> {
+            return if(prompt.isEmpty()) arrayOf("", "", "", "")
+            else if(prompt.size > 4) prompt.subList(0, 4).toTypedArray()
+            else if(prompt.size < 4) {
+                val mutPrompt = prompt.toMutableList()
+                while(mutPrompt.size < 4) mutPrompt += ""
+                mutPrompt.toTypedArray()
+            } else prompt.toTypedArray()
+        }
     }
 }
