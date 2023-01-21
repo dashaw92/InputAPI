@@ -1,0 +1,14 @@
+name: InputAPI
+main: me.danny.libinput.InputAPI
+version: "git-${git_commit}-dev"
+author: "Danny"
+api-version: "1.19"
+description: "Provides input retrieval for plugins"
+website: "https://github.com/dashaw92/InputAPI"
+softdepend:
+  - ProtocolLib
+libraries:
+  - org.jetbrains.kotlin:kotlin-stdlib:1.8.0
+  - org.spongepowered:configurate-yaml:4.1.2
+default-permission: "op"
+database: false
