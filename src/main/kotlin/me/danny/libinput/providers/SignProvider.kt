@@ -10,6 +10,7 @@ import me.danny.libinput.OutputCallback
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.Tag
 import org.bukkit.entity.Player
 import java.util.*
 
@@ -19,7 +20,7 @@ https://www.spigotmc.org/threads/signmenu-1-16-5-get-player-sign-input.249381/
 
 Adapted to Kotlin and updated to 1.19 by Danny
  */
-class SignProvider(player: Player, prompt: List<String>, callback: OutputCallback) : InputProvider(player, prompt, callback) {
+class SignProvider : InputProvider {
 
     companion object {
         private val inEditor: MutableMap<UUID, SignMenu> = mutableMapOf()
@@ -31,7 +32,7 @@ class SignProvider(player: Player, prompt: List<String>, callback: OutputCallbac
                     val menu = inEditor[player.uniqueId] ?: return
                     event.isCancelled = true
 
-                    val input = event.packet.stringArrays.read(0)[0]
+                    val input = event.packet.stringArrays.read(0)[menu.promptIndex]
                     Bukkit.getScheduler().runTaskLater(InputAPI.instance(), Runnable {
                         player.sendBlockChange(menu.loc, menu.loc.block.blockData)
                     }, 1)
@@ -43,17 +44,51 @@ class SignProvider(player: Player, prompt: List<String>, callback: OutputCallbac
         }
     }
 
-    override fun getInput() {
-        val menu = SignMenu(player.uniqueId, callback)
-        menu.openSign(prompt)
+    private var signMaterial: Material = Material.OAK_WALL_SIGN
+    private var lines: Array<String> = arrayOf("", "", "", "")
+    private var promptIndex: Int = 0
+
+    fun withMaterial(sign: Material): SignProvider {
+        if(!Tag.SIGNS.isTagged(sign)) throw IllegalArgumentException("Cannot use a non-sign material!")
+        signMaterial = sign
+        return this
+    }
+
+    fun withLines(lines: Array<String>): SignProvider {
+        val corrected = if(lines.size > 4) lines.copyOfRange(0, 4)
+        else if(lines.size < 4) {
+            val mutList = lines.toMutableList()
+            while(mutList.size != 4) mutList += ""
+            mutList.toTypedArray()
+        } else lines
+
+        this.lines = corrected
+        return this
+    }
+
+    fun withLine(index: Int, line: String): SignProvider {
+        if(!(0 until 4).contains(index)) throw IllegalArgumentException("Line index must be 0, 1, 2, or 3.")
+        lines[index] = line
+        return this
+    }
+
+    fun withPromptAtLine(index: Int): SignProvider {
+        if(!(0 until 4).contains(index)) throw IllegalArgumentException("Line index must be 0, 1, 2, or 3.")
+        promptIndex = index
+        return this
+    }
+
+    override fun getInput(player: Player, callback: OutputCallback) {
+        val menu = SignMenu(player.uniqueId, callback, signMaterial, lines, promptIndex)
+        menu.openSign()
         inEditor += player.uniqueId to menu
     }
 
-    private class SignMenu(val uuid: UUID, val callback: OutputCallback) {
+    private class SignMenu(val uuid: UUID, val callback: OutputCallback, val material: Material, val lines: Array<String>, val promptIndex: Int) {
 
         lateinit var loc: Location
 
-        fun openSign(prompt: List<String>) {
+        fun openSign() {
             val player = Bukkit.getPlayer(uuid) ?: return
 
             loc = player.location
@@ -61,24 +96,12 @@ class SignProvider(player: Player, prompt: List<String>, callback: OutputCallbac
             else player.world.minHeight + 1
             val pos = BlockPosition(loc.blockX, oppositeY, loc.blockZ)
 
-            val lines = padLinesToFour(prompt)
-
-            player.sendBlockChange(pos.toLocation(player.world), Material.OAK_SIGN.createBlockData())
+            player.sendBlockChange(pos.toLocation(player.world), material.createBlockData())
             player.sendSignChange(pos.toLocation(player.world), lines)
 
             val openSign = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.OPEN_SIGN_EDITOR)
             openSign.blockPositionModifier.write(0, pos)
             ProtocolLibrary.getProtocolManager().sendServerPacket(player, openSign)
-        }
-
-        private fun padLinesToFour(prompt: List<String>): Array<String> {
-            return if(prompt.isEmpty()) arrayOf("", "", "", "")
-            else if(prompt.size > 4) prompt.subList(0, 4).toTypedArray()
-            else if(prompt.size < 4) {
-                val mutPrompt = prompt.toMutableList()
-                while(mutPrompt.size < 4) mutPrompt += ""
-                mutPrompt.toTypedArray()
-            } else prompt.toTypedArray()
         }
     }
 }

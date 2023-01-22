@@ -1,6 +1,8 @@
 package me.danny.libinput
 
+import me.danny.libinput.providers.SignProvider
 import org.bukkit.Bukkit
+import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -12,10 +14,6 @@ typealias OutputCallback = (Player, String?) -> Unit
 class InputAPI : JavaPlugin(), Listener {
 
     companion object {
-        fun getInput(player: Player, options: InputOptions, callback: OutputCallback) {
-            options.provide(player, callback)
-        }
-
         fun instance(): InputAPI = getPlugin(InputAPI::class.java)
     }
 
@@ -25,14 +23,14 @@ class InputAPI : JavaPlugin(), Listener {
 
     @EventHandler
     fun onChat(event: AsyncPlayerChatEvent) {
-        handleInput(event.player)
+        SignProvider()
+            .withLines(arrayOf("", "^^^^^", "[DannyShop]", "Search"))
+            .withPromptAtLine(0)
+            .withMaterial(Material.ACACIA_WALL_SIGN)
+            .getInput(event.player, ::handleInput)
     }
 
     private fun handleInput(player: Player, input: String? = null) {
-        if(input.isNullOrBlank()) {
-            getInput(player, InputOptions(listOf("", "^^^^^", "DannyShop", "Search")), ::handleInput)
-            return
-        }
-        player.msg("&eYou sent: &d$input")
+        player.msg("&eYou sent: \"&d$input&e\"")
     }
 }
