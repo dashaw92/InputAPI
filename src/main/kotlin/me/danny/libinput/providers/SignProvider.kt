@@ -23,29 +23,40 @@ Adapted to Kotlin and updated to 1.19 by Danny
 class SignProvider : InputProvider {
 
     companion object {
+        fun isAvailable(): Boolean = Bukkit.getPluginManager().isPluginEnabled("ProtocolLib")
+
         private val inEditor: MutableMap<UUID, SignMenu> = mutableMapOf()
 
         init {
-            ProtocolLibrary.getProtocolManager().addPacketListener(object : PacketAdapter(InputAPI.instance(), PacketType.Play.Client.UPDATE_SIGN) {
-                override fun onPacketReceiving(event: PacketEvent) {
-                    val player = event.player
-                    val menu = inEditor[player.uniqueId] ?: return
-                    event.isCancelled = true
+            if(isAvailable()) {
+                ProtocolLibrary.getProtocolManager()
+                    .addPacketListener(object : PacketAdapter(InputAPI.instance(), PacketType.Play.Client.UPDATE_SIGN) {
+                        override fun onPacketReceiving(event: PacketEvent) {
+                            val player = event.player
+                            val menu = inEditor[player.uniqueId] ?: return
+                            event.isCancelled = true
 
-                    val input = event.packet.stringArrays.read(0)[menu.promptIndex]
-                    Bukkit.getScheduler().runTaskLater(InputAPI.instance(), Runnable {
-                        player.sendBlockChange(menu.loc, menu.loc.block.blockData)
-                    }, 1)
+                            val input = event.packet.stringArrays.read(0)[menu.promptIndex]
+                            Bukkit.getScheduler().runTaskLater(InputAPI.instance(), Runnable {
+                                player.sendBlockChange(menu.loc, menu.loc.block.blockData)
+                            }, 1)
 
-                    inEditor.remove(player.uniqueId)
-                    menu.callback(player, input)
-                }
-            })
+                            inEditor.remove(player.uniqueId)
+                            menu.callback(player, input)
+                        }
+                    })
+            }
+        }
+    }
+
+    init {
+        if(!isAvailable()) {
+            throw IllegalStateException("Cannot create sign menus without ProtocolLib! Use SignProvider#isAvailable to safely check!")
         }
     }
 
     private var signMaterial: Material = Material.OAK_WALL_SIGN
-    private var lines: Array<String> = arrayOf("", "", "", "")
+    private var lines: Array<String> = arrayOf("", "^^^^^", "Please type input", "on the first line")
     private var promptIndex: Int = 0
 
     fun withMaterial(sign: Material): SignProvider {
