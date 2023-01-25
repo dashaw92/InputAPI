@@ -3,6 +3,7 @@ package me.danny.libinput.providers.conversation
 import me.danny.libinput.InputAPI
 import me.danny.libinput.OutputCallback
 import me.danny.libinput.color
+import me.danny.libinput.providers.MultipleLines
 import org.bukkit.conversations.*
 import org.bukkit.entity.Player
 import org.jetbrains.annotations.NotNull
@@ -14,34 +15,53 @@ object ConversationStarter {
         promptText: String,
         prefix: String,
         callback: OutputCallback,
+        numberOfLines: Int,
         infoMessage: List<String>,
         vararg escapeWords: String
     ): Conversation {
         val factory = ConversationFactory(InputAPI.instance())
-            .withFirstPrompt(MultilineMessage(StringPrompt(promptText, callback, escapeWords), *infoMessage.toTypedArray()))
+            .withFirstPrompt(MultilineMessage(StringPrompt(promptText, callback, numberOfLines, escapeWords), *infoMessage.toTypedArray()))
             .withLocalEcho(false)
             .withModality(false)
             .withPrefix { prefix.color() }
             .withConversationCanceller(ServerReloadCanceller())
-        return factory.buildConversation(player)
+        val convo = factory.buildConversation(player)
+        convo.context.setSessionData("input", mutableListOf<String>())
+        return convo
     }
 }
+
+private inline fun <reified T> ConversationContext.sessionData(key: String): T = getSessionData(key)!! as T
 
 class StringPrompt(
     private val prompt: String,
     private val callback: OutputCallback,
+    private val numberOfLines: Int,
     private val escapeWords: Array<out String>
 ) : Prompt {
 
-    override fun getPromptText(context: ConversationContext): String = prompt
+    override fun getPromptText(context: ConversationContext): String {
+        return if(numberOfLines < 2) prompt
+        else {
+            val current = context.sessionData<MutableList<String>>("input").size + 1
+            "&7($current/$numberOfLines) $prompt".color()
+        }
+    }
     override fun blocksForInput(context: ConversationContext): Boolean = true
 
     override fun acceptInput(context: ConversationContext, input: String?): Prompt? {
         val message = if(input in escapeWords) ""
         else input ?: ""
 
-        callback(context.forWhom as Player, message)
-        return Prompt.END_OF_CONVERSATION
+        val messages = context.sessionData<MutableList<String>>("input")
+        messages += message
+
+        if(messages.size >= numberOfLines) {
+            callback(context.forWhom as Player, MultipleLines(messages))
+            return Prompt.END_OF_CONVERSATION
+        }
+
+        return StringPrompt(prompt, callback, numberOfLines, escapeWords)
     }
 
 }

@@ -20,7 +20,7 @@ https://www.spigotmc.org/threads/signmenu-1-16-5-get-player-sign-input.249381/
 
 Adapted to Kotlin and updated to 1.19 by Danny
  */
-class SignProvider : InputProvider {
+class SignInput : InputProvider {
 
     companion object {
         fun isAvailable(): Boolean = Bukkit.getPluginManager().isPluginEnabled("ProtocolLib")
@@ -42,7 +42,7 @@ class SignProvider : InputProvider {
                             }, 1)
 
                             inEditor.remove(player.uniqueId)
-                            menu.callback(player, input)
+                            menu.callback(player, SingleLine(input))
                         }
                     })
             }
@@ -59,13 +59,13 @@ class SignProvider : InputProvider {
     private var lines: Array<String> = arrayOf("", "^^^^^", "Please type input", "on the first line")
     private var promptIndex: Int = 0
 
-    fun withMaterial(sign: Material): SignProvider {
+    fun withMaterial(sign: Material): SignInput {
         if(!Tag.SIGNS.isTagged(sign)) throw IllegalArgumentException("Cannot use a non-sign material!")
         signMaterial = sign
         return this
     }
 
-    fun withLines(lines: Array<String>): SignProvider {
+    fun withLines(lines: Array<String>): SignInput {
         val corrected = if(lines.size > 4) lines.copyOfRange(0, 4)
         else if(lines.size < 4) {
             val mutList = lines.toMutableList()
@@ -77,13 +77,13 @@ class SignProvider : InputProvider {
         return this
     }
 
-    fun withLine(index: Int, line: String): SignProvider {
+    fun withLine(index: Int, line: String): SignInput {
         if(!(0 until 4).contains(index)) throw IllegalArgumentException("Line index must be 0, 1, 2, or 3.")
         lines[index] = line
         return this
     }
 
-    fun withPromptAtLine(index: Int): SignProvider {
+    fun withPromptAtLine(index: Int): SignInput {
         if(!(0 until 4).contains(index)) throw IllegalArgumentException("Line index must be 0, 1, 2, or 3.")
         promptIndex = index
         return this
