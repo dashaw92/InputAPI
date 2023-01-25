@@ -36,7 +36,7 @@ class SignInput : InputProvider {
                             val menu = inEditor[player.uniqueId] ?: return
                             event.isCancelled = true
 
-                            val input = event.packet.stringArrays.read(0)[menu.promptIndex]
+                            val input = event.packet.stringArrays.optionRead(0).orElse(arrayOf("", "", "", ""))[menu.promptIndex]
                             Bukkit.getScheduler().runTaskLater(InputAPI.instance(), Runnable {
                                 player.sendBlockChange(menu.loc, menu.loc.block.blockData)
                             }, 1)
