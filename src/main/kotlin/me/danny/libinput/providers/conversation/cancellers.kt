@@ -1,13 +1,9 @@
 package me.danny.libinput.providers.conversation
 
-import me.danny.libinput.InputAPI
-import org.bukkit.conversations.Conversation
-import org.bukkit.conversations.ConversationAbandonedEvent
-import org.bukkit.conversations.ConversationCanceller
-import org.bukkit.conversations.ConversationContext
-import org.bukkit.event.EventHandler
-import org.bukkit.event.Listener
-import org.bukkit.event.server.PluginDisableEvent
+import me.danny.libinput.*
+import org.bukkit.conversations.*
+import org.bukkit.event.*
+import org.bukkit.event.server.*
 
 class ServerReloadCanceller : ConversationCanceller {
     private var conversation: Conversation? = null

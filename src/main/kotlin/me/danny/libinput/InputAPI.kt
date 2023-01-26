@@ -1,14 +1,12 @@
 package me.danny.libinput
 
 import me.danny.libinput.providers.*
-import me.danny.libinput.providers.conversation.ServerReloadListener
-import org.bukkit.Bukkit
-import org.bukkit.Material
-import org.bukkit.entity.Player
-import org.bukkit.event.EventHandler
-import org.bukkit.event.Listener
-import org.bukkit.event.player.AsyncPlayerChatEvent
-import org.bukkit.plugin.java.JavaPlugin
+import me.danny.libinput.providers.conversation.*
+import org.bukkit.*
+import org.bukkit.entity.*
+import org.bukkit.event.*
+import org.bukkit.event.player.*
+import org.bukkit.plugin.java.*
 
 typealias OutputCallback = (Player, Input) -> Unit
 
@@ -25,7 +23,7 @@ class InputAPI : JavaPlugin(), Listener {
 
     @EventHandler
     fun onChat(event: AsyncPlayerChatEvent) {
-        val provider = when(event.message.lowercase()) {
+        val provider = when (event.message.lowercase()) {
             "sign" -> SignInput()
                 .withLines(arrayOf("", "^^^^^", "[DannyShop]", "Search"))
                 .withPromptAtLine(0)
@@ -38,7 +36,7 @@ class InputAPI : JavaPlugin(), Listener {
                     .withPrompt("&6Enter item to search for:".color())
                     .withEscapeWords("cancel")
             }
-            
+
             else -> return
         }
 
@@ -47,7 +45,7 @@ class InputAPI : JavaPlugin(), Listener {
     }
 
     private fun handleInput(player: Player, input: Input) {
-        when(input) {
+        when (input) {
             is SingleLine -> player.msg("&eYou sent: \"&d${input.line}&e\"")
             is MultipleLines -> {
                 player.msg("&eWow! You sent a lot of messages!")

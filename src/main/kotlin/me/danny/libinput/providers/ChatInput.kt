@@ -1,8 +1,8 @@
 package me.danny.libinput.providers
 
-import me.danny.libinput.OutputCallback
-import me.danny.libinput.providers.conversation.ConversationStarter
-import org.bukkit.entity.Player
+import me.danny.libinput.*
+import me.danny.libinput.providers.conversation.*
+import org.bukkit.entity.*
 
 class ChatInput : InputProvider {
     private var promptText = "Please provide input:"
@@ -15,7 +15,7 @@ class ChatInput : InputProvider {
     )
 
     fun requestLines(numberOfLines: Int): ChatInput {
-        if(numberOfLines > 0) this.numberOfLines = numberOfLines
+        if (numberOfLines > 0) this.numberOfLines = numberOfLines
         return this
     }
 
@@ -25,7 +25,15 @@ class ChatInput : InputProvider {
     fun withInfoMessage(message: List<String>) = apply { infoMessage = message }
 
     override fun getInput(player: Player, callback: OutputCallback) {
-        ConversationStarter.getForPlayer(player, promptText, prefix, callback, numberOfLines, infoMessage, *escapeWords.toTypedArray())
+        ConversationStarter.getForPlayer(
+            player,
+            promptText,
+            prefix,
+            callback,
+            numberOfLines,
+            infoMessage,
+            *escapeWords.toTypedArray()
+        )
             .begin()
     }
 

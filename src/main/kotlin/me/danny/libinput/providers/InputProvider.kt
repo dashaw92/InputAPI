@@ -1,7 +1,7 @@
 package me.danny.libinput.providers
 
-import me.danny.libinput.OutputCallback
-import org.bukkit.entity.Player
+import me.danny.libinput.*
+import org.bukkit.entity.*
 
 sealed interface InputProvider {
     fun getInput(player: Player, callback: OutputCallback)

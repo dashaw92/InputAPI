@@ -1,17 +1,11 @@
 package me.danny.libinput.providers
 
-import com.comphenix.protocol.PacketType
-import com.comphenix.protocol.ProtocolLibrary
-import com.comphenix.protocol.events.PacketAdapter
-import com.comphenix.protocol.events.PacketEvent
-import com.comphenix.protocol.wrappers.BlockPosition
-import me.danny.libinput.InputAPI
-import me.danny.libinput.OutputCallback
-import org.bukkit.Bukkit
-import org.bukkit.Location
-import org.bukkit.Material
-import org.bukkit.Tag
-import org.bukkit.entity.Player
+import com.comphenix.protocol.*
+import com.comphenix.protocol.events.*
+import com.comphenix.protocol.wrappers.*
+import me.danny.libinput.*
+import org.bukkit.*
+import org.bukkit.entity.*
 import java.util.*
 
 /*
@@ -28,7 +22,7 @@ class SignInput : InputProvider {
         private val inEditor: MutableMap<UUID, SignMenu> = mutableMapOf()
 
         init {
-            if(isAvailable()) {
+            if (isAvailable()) {
                 ProtocolLibrary.getProtocolManager()
                     .addPacketListener(object : PacketAdapter(InputAPI.instance(), PacketType.Play.Client.UPDATE_SIGN) {
                         override fun onPacketReceiving(event: PacketEvent) {
@@ -36,7 +30,8 @@ class SignInput : InputProvider {
                             val menu = inEditor[player.uniqueId] ?: return
                             event.isCancelled = true
 
-                            val input = event.packet.stringArrays.optionRead(0).orElse(arrayOf("", "", "", ""))[menu.promptIndex]
+                            val input = event.packet.stringArrays.optionRead(0)
+                                .orElse(arrayOf("", "", "", ""))[menu.promptIndex]
                             Bukkit.getScheduler().runTaskLater(InputAPI.instance(), Runnable {
                                 player.sendBlockChange(menu.loc, menu.loc.block.blockData)
                             }, 1)
@@ -49,27 +44,21 @@ class SignInput : InputProvider {
         }
     }
 
-    init {
-        if(!isAvailable()) {
-            throw IllegalStateException("Cannot create sign menus without ProtocolLib! Use SignProvider#isAvailable to safely check!")
-        }
-    }
-
     private var signMaterial: Material = Material.OAK_WALL_SIGN
     private var lines: Array<String> = arrayOf("", "^^^^^", "Please type input", "on the first line")
     private var promptIndex: Int = 0
 
     fun withMaterial(sign: Material): SignInput {
-        if(!Tag.SIGNS.isTagged(sign)) throw IllegalArgumentException("Cannot use a non-sign material!")
+        if (!Tag.SIGNS.isTagged(sign)) throw IllegalArgumentException("Cannot use a non-sign material!")
         signMaterial = sign
         return this
     }
 
     fun withLines(lines: Array<String>): SignInput {
-        val corrected = if(lines.size > 4) lines.copyOfRange(0, 4)
-        else if(lines.size < 4) {
+        val corrected = if (lines.size > 4) lines.copyOfRange(0, 4)
+        else if (lines.size < 4) {
             val mutList = lines.toMutableList()
-            while(mutList.size != 4) mutList += ""
+            while (mutList.size != 4) mutList += ""
             mutList.toTypedArray()
         } else lines
 
@@ -78,13 +67,13 @@ class SignInput : InputProvider {
     }
 
     fun withLine(index: Int, line: String): SignInput {
-        if(!(0 until 4).contains(index)) throw IllegalArgumentException("Line index must be 0, 1, 2, or 3.")
+        if (!(0 until 4).contains(index)) throw IllegalArgumentException("Line index must be 0, 1, 2, or 3.")
         lines[index] = line
         return this
     }
 
     fun withPromptAtLine(index: Int): SignInput {
-        if(!(0 until 4).contains(index)) throw IllegalArgumentException("Line index must be 0, 1, 2, or 3.")
+        if (!(0 until 4).contains(index)) throw IllegalArgumentException("Line index must be 0, 1, 2, or 3.")
         promptIndex = index
         return this
     }
@@ -95,7 +84,13 @@ class SignInput : InputProvider {
         inEditor += player.uniqueId to menu
     }
 
-    private class SignMenu(val uuid: UUID, val callback: OutputCallback, val material: Material, val lines: Array<String>, val promptIndex: Int) {
+    private class SignMenu(
+        val uuid: UUID,
+        val callback: OutputCallback,
+        val material: Material,
+        val lines: Array<String>,
+        val promptIndex: Int
+    ) {
 
         lateinit var loc: Location
 
@@ -103,7 +98,7 @@ class SignInput : InputProvider {
             val player = Bukkit.getPlayer(uuid) ?: return
 
             loc = player.location
-            val oppositeY = if(loc.blockY < player.world.maxHeight / 2) player.world.maxHeight - 1
+            val oppositeY = if (loc.blockY < player.world.maxHeight / 2) player.world.maxHeight - 1
             else player.world.minHeight + 1
             val pos = BlockPosition(loc.blockX, oppositeY, loc.blockZ)
 

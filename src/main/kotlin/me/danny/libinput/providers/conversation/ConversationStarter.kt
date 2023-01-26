@@ -1,12 +1,10 @@
 package me.danny.libinput.providers.conversation
 
-import me.danny.libinput.InputAPI
-import me.danny.libinput.OutputCallback
-import me.danny.libinput.color
-import me.danny.libinput.providers.MultipleLines
+import me.danny.libinput.*
+import me.danny.libinput.providers.*
 import org.bukkit.conversations.*
-import org.bukkit.entity.Player
-import org.jetbrains.annotations.NotNull
+import org.bukkit.entity.*
+import org.jetbrains.annotations.*
 
 
 object ConversationStarter {
@@ -20,7 +18,12 @@ object ConversationStarter {
         vararg escapeWords: String
     ): Conversation {
         val factory = ConversationFactory(InputAPI.instance())
-            .withFirstPrompt(MultilineMessage(StringPrompt(promptText, callback, numberOfLines, escapeWords), *infoMessage.toTypedArray()))
+            .withFirstPrompt(
+                MultilineMessage(
+                    StringPrompt(promptText, callback, numberOfLines, escapeWords),
+                    *infoMessage.toTypedArray()
+                )
+            )
             .withLocalEcho(false)
             .withModality(false)
             .withPrefix { prefix.color() }
@@ -41,22 +44,23 @@ class StringPrompt(
 ) : Prompt {
 
     override fun getPromptText(context: ConversationContext): String {
-        return if(numberOfLines < 2) prompt
+        return if (numberOfLines < 2) prompt
         else {
             val current = context.sessionData<MutableList<String>>("input").size + 1
             "&7($current/$numberOfLines) $prompt".color()
         }
     }
+
     override fun blocksForInput(context: ConversationContext): Boolean = true
 
     override fun acceptInput(context: ConversationContext, input: String?): Prompt? {
-        val message = if(input in escapeWords) ""
+        val message = if (input in escapeWords) ""
         else input ?: ""
 
         val messages = context.sessionData<MutableList<String>>("input")
         messages += message
 
-        if(messages.size >= numberOfLines) {
+        if (messages.size >= numberOfLines) {
             callback(context.forWhom as Player, MultipleLines(messages))
             return Prompt.END_OF_CONVERSATION
         }
