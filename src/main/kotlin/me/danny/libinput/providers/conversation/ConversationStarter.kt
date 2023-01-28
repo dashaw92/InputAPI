@@ -61,7 +61,7 @@ class StringPrompt(
         messages += message
 
         if (messages.size >= numberOfLines) {
-            callback(context.forWhom as Player, MultipleLines(messages))
+            callback.accept(context.forWhom as Player, MultipleLines(messages))
             return Prompt.END_OF_CONVERSATION
         }
 

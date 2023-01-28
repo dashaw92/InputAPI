@@ -27,17 +27,16 @@ class SignInput : InputProvider {
                     .addPacketListener(object : PacketAdapter(InputAPI.instance(), PacketType.Play.Client.UPDATE_SIGN) {
                         override fun onPacketReceiving(event: PacketEvent) {
                             val player = event.player
-                            val menu = inEditor[player.uniqueId] ?: return
+                            val menu = inEditor.remove(player.uniqueId) ?: return
                             event.isCancelled = true
 
                             val input = event.packet.stringArrays.optionRead(0)
                                 .orElse(arrayOf("", "", "", ""))[menu.promptIndex]
-                            Bukkit.getScheduler().runTaskLater(InputAPI.instance(), Runnable {
-                                player.sendBlockChange(menu.loc, menu.loc.block.blockData)
-                            }, 1)
 
-                            inEditor.remove(player.uniqueId)
-                            menu.callback(player, SingleLine(input))
+                            Bukkit.getScheduler().runTask(InputAPI.instance(), Runnable {
+                                player.sendBlockChange(menu.loc, menu.loc.block.blockData)
+                                menu.callback.accept(player, SingleLine(input))
+                            })
                         }
                     })
             }
