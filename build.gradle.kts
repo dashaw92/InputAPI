@@ -1,13 +1,13 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.8.0"
-    id("org.ajoberstar.grgit") version ("5.0.0")
+    kotlin("jvm") version "2.1.0"
+    id("org.ajoberstar.grgit") version ("5.3.0")
 }
 
 group = "me.danny"
 version = "${getHash()}-dev"
-val spigotVersion = "1.19.3-R0.1-SNAPSHOT"
+val spigotVersion = "1.21.4-R0.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -17,11 +17,11 @@ repositories {
 
 dependencies {
     compileOnly("org.spigotmc:spigot-api:$spigotVersion")
-    compileOnly("com.comphenix.protocol:ProtocolLib:5.0.0-SNAPSHOT")
+    compileOnly("com.comphenix.protocol:ProtocolLib:5.3.0")
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "18"
+    kotlinOptions.jvmTarget = "23"
 }
 
 tasks.named<Copy>("processResources") {

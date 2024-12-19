@@ -1,11 +1,17 @@
 package me.danny.libinput.providers
 
-import com.comphenix.protocol.*
-import com.comphenix.protocol.events.*
-import com.comphenix.protocol.wrappers.*
-import me.danny.libinput.*
-import org.bukkit.*
-import org.bukkit.entity.*
+import com.comphenix.protocol.PacketType
+import com.comphenix.protocol.ProtocolLibrary
+import com.comphenix.protocol.events.PacketAdapter
+import com.comphenix.protocol.events.PacketEvent
+import com.comphenix.protocol.wrappers.BlockPosition
+import me.danny.libinput.InputAPI
+import me.danny.libinput.OutputCallback
+import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.Material
+import org.bukkit.Tag
+import org.bukkit.entity.Player
 import java.util.*
 
 /*
@@ -13,6 +19,9 @@ Inspired by the public resource on the spigot forums:
 https://www.spigotmc.org/threads/signmenu-1-16-5-get-player-sign-input.249381/
 
 Adapted to Kotlin and updated to 1.19 by Danny
+Changes from 1.19 to 1.21.4:
+    * Signs must now be within a certain distance of the player, else the client will immediately close the sign
+    * The S->C open sign editor packet has a boolean field for the side of the sign to edit. Omitting this field causes all opened signs to be blank.
  */
 class SignInput : InputProvider {
 
@@ -66,13 +75,13 @@ class SignInput : InputProvider {
     }
 
     fun withLine(index: Int, line: String): SignInput {
-        if (!(0 until 4).contains(index)) throw IllegalArgumentException("Line index must be 0, 1, 2, or 3.")
+        if (!(0..<4).contains(index)) throw IllegalArgumentException("Line index must be 0, 1, 2, or 3.")
         lines[index] = line
         return this
     }
 
     fun withPromptAtLine(index: Int): SignInput {
-        if (!(0 until 4).contains(index)) throw IllegalArgumentException("Line index must be 0, 1, 2, or 3.")
+        if (!(0..<4).contains(index)) throw IllegalArgumentException("Line index must be 0, 1, 2, or 3.")
         promptIndex = index
         return this
     }
@@ -96,16 +105,15 @@ class SignInput : InputProvider {
         fun openSign() {
             val player = Bukkit.getPlayer(uuid) ?: return
 
-            loc = player.location
-            val oppositeY = if (loc.blockY < player.world.maxHeight / 2) player.world.maxHeight - 1
-            else player.world.minHeight + 1
-            val pos = BlockPosition(loc.blockX, oppositeY, loc.blockZ)
+            loc = Location(player.world, player.location.x, player.location.y + 10, player.location.z)
+            val pos = BlockPosition(loc.blockX, loc.blockY, loc.blockZ)
 
             player.sendBlockChange(pos.toLocation(player.world), material.createBlockData())
             player.sendSignChange(pos.toLocation(player.world), lines)
 
             val openSign = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.OPEN_SIGN_EDITOR)
             openSign.blockPositionModifier.write(0, pos)
+            openSign.booleans.write(0, true)
             ProtocolLibrary.getProtocolManager().sendServerPacket(player, openSign)
         }
     }
